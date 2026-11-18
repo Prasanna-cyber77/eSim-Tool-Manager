@@ -29,7 +29,15 @@ class PreparedEnvironment:
         return bool(self.changes)
 
 
-def _same_path(left, right):
+def _same_path(left, right, windows=None):
+    try:
+        p_left, p_right = Path(left), Path(right)
+        if p_left.exists() and p_right.exists() and p_left.resolve() == p_right.resolve():
+            return True
+    except OSError:
+        pass
+    if windows is True or (windows is None and (os.name == "nt" or "\\" in str(left) or "\\" in str(right))):
+        return os.path.normpath(str(left)).casefold() == os.path.normpath(str(right)).casefold()
     return os.path.normcase(os.path.normpath(str(left))) == os.path.normcase(os.path.normpath(str(right)))
 
 
@@ -83,7 +91,7 @@ def prepare(discovery, candidate, version=None, shell="powershell"):
     notes = []
 
     current_simulator = environment.get("ESIM_NGSPICE")
-    if not current_simulator or not _same_path(current_simulator, executable):
+    if not current_simulator or not _same_path(current_simulator, executable, discovery.windows):
         changes.append(Change("ESIM_NGSPICE", "set", current_simulator or None, str(executable)))
         environment["ESIM_NGSPICE"] = str(executable)
     else:
@@ -91,7 +99,7 @@ def prepare(discovery, candidate, version=None, shell="powershell"):
 
     bin_dir = str(executable.parent)
     entries = _path_entries(environment.get("PATH"))
-    if not any(_same_path(entry, bin_dir) for entry in entries):
+    if not any(_same_path(entry, bin_dir, discovery.windows) for entry in entries):
         changes.append(Change("PATH", "prepend", environment.get("PATH") or None, bin_dir))
         environment["PATH"] = bin_dir + (os.pathsep + environment["PATH"] if environment.get("PATH") else "")
     else:
@@ -103,7 +111,7 @@ def prepare(discovery, candidate, version=None, shell="powershell"):
         if not current_lib:
             changes.append(Change("SPICE_LIB_DIR", "set", None, str(share)))
             environment["SPICE_LIB_DIR"] = str(share)
-        elif not _same_path(current_lib, share):
+        elif not _same_path(current_lib, share, discovery.windows):
             notes.append(f"Existing SPICE_LIB_DIR is preserved: {current_lib}")
         else:
             notes.append("SPICE_LIB_DIR already points at the selected prefix.")

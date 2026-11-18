@@ -18,7 +18,7 @@ class CLITests(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.base = Path(temp.name)
+        self.base = Path(temp.name).resolve()
         self.host = Host("windows", "10.0.22631", "amd64")
         self.root = self.base / "eSim Installed"
         app = self.root / "src/frontEnd/Application.py"

@@ -15,7 +15,7 @@ class DiscoveryTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.base = Path(temporary.name)
+        self.base = Path(temporary.name).resolve()
         self.root = self.base / "eSim tools"
         self.home = self.base / "home"
         self.system = self.base / "Program Files"

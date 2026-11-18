@@ -21,7 +21,7 @@ class PortableTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.base = Path(temporary.name)
+        self.base = Path(temporary.name).resolve()
         system = self.base / "Windows"
         (system / "System32").mkdir(parents=True)
         (system / "System32/tar.exe").touch()

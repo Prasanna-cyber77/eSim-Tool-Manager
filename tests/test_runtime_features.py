@@ -45,7 +45,7 @@ class RootDiscoveryTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.base = Path(temporary.name)
+        self.base = Path(temporary.name).resolve()
         self.host = Host("windows", "10.0.22631", "amd64")
         self.env = {"SystemDrive": str(self.base / "system-drive")}
 
@@ -117,7 +117,7 @@ class EnvironmentPreparationTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.base = Path(temporary.name)
+        self.base = Path(temporary.name).resolve()
         self.host = Host("windows", "10.0.22631", "amd64")
         self.home = self.base / "home"
         self.prefix = self.base / "portable store" / "O'Brien" / "ngspice" / "47"
@@ -179,7 +179,7 @@ class ManagedInspectionTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.base = Path(temporary.name)
+        self.base = Path(temporary.name).resolve()
         self.directory = self.base / "ngspice/47"
         self.binary = executable(self.directory / "bin/ngspice_con.exe")
         (self.directory / "share").mkdir()
@@ -242,7 +242,7 @@ class VerificationReceiptTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.base = Path(temporary.name)
+        self.base = Path(temporary.name).resolve()
         self.binary = executable(self.base / "ngspice/bin/ngspice_con.exe")
         self.path = verification.path_for(self.base / "settings.json")
 
@@ -331,7 +331,7 @@ class SimulationTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.base = Path(temporary.name)
+        self.base = Path(temporary.name).resolve()
         self.binary = executable(self.base / "spaced folder/ngspice_con.exe")
 
     def test_success_runs_in_isolated_workspace_and_checks_numeric_output(self):
@@ -400,7 +400,7 @@ class ManagedHealthTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.base = Path(temporary.name)
+        self.base = Path(temporary.name).resolve()
         self.store = self.base / "local/eSimToolManager/tools"
         self.directory = self.store / "ngspice/47"
         self.binary = executable(self.directory / "bin/ngspice_con.exe")
@@ -459,7 +459,7 @@ class NewCommandTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.base = Path(temporary.name)
+        self.base = Path(temporary.name).resolve()
         self.host = Host("windows", "10.0.22631", "amd64")
         self.root = make_root(self.base / "workspace", "eSim Installed")
         self.binary = executable(self.base / "store/ngspice/47/bin/ngspice_con.exe")
