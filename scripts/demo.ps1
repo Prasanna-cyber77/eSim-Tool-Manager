@@ -41,7 +41,7 @@ try {
     & $python -m esim_tool_manager verify ngspice
     $verifyStatus = $LASTEXITCODE
 
-    Write-Host "`n== End-to-end validation =="
+    Write-Host "`n== Toolchain detection, checksum and simulation validation =="
     & $python -m esim_tool_manager validate
     $validateStatus = $LASTEXITCODE
 

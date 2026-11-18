@@ -397,7 +397,7 @@ def validate_command(args, discovery, logger, selection, receipt_path):
     if args.json:
         display(payload)
     else:
-        print("End-to-end validation")
+        print("Toolchain detection, checksum and simulation validation")
         print(f"eSim root: {selection.path or 'undetected'} ({selection.method})")
         if selection.warning:
             print(f"  {selection.warning}")
@@ -431,9 +431,31 @@ def environment_command(args, discovery, logger, selection):
                    "version": probe_result.version, "error": probe_result.error}
         log_event(logger, "environment_prepared", shell=shell, executable=str(candidate.path),
                   changes=[change.variable for change in plan.changes], applied=applied["verified"])
+    prepared_data = asdict(plan)
+    # Prevent information disclosure of inherited host environment variables in diagnostic output
+    sanitized_changes = []
+    for change in plan.changes:
+        item = asdict(change)
+        if item["variable"] == "PATH":
+            item["previous"] = "(preserved)"
+        sanitized_changes.append(item)
+    prepared_data["changes"] = sanitized_changes
+
+    # Show only tool-manager variables set/prepared; do not serialize raw inherited PATH or unrelated host overrides
+    sanitized_env = {}
+    if "ESIM_NGSPICE" in plan.environment:
+        sanitized_env["ESIM_NGSPICE"] = plan.environment["ESIM_NGSPICE"]
+    if "SPICE_LIB_DIR" in plan.environment:
+        sanitized_env["SPICE_LIB_DIR"] = plan.environment["SPICE_LIB_DIR"]
+    for change in plan.changes:
+        if change.variable != "PATH":
+            sanitized_env[change.variable] = change.value
+        else:
+            sanitized_env["PATH"] = f"{change.value}{os.pathsep}(inherited PATH preserved)"
+    prepared_data["environment"] = sanitized_env
     payload = {"esim_root": discovery.root, "discovery_method": selection.method,
                "simulator": candidate.path, "source": candidate.source,
-               "version": version.version, "prepared": asdict(plan), "applied": applied,
+               "version": version.version, "prepared": prepared_data, "applied": applied,
                "scope": "Child process only. The parent shell, PATH and registry are unchanged."}
     if args.json:
         display(payload)

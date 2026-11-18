@@ -14,10 +14,10 @@ from tempfile import NamedTemporaryFile
 
 from .portable import sha256
 from .runtime import ManagerError
+from .simulation import CIRCUIT_ID, EXPECTED_VALUE, TOLERANCE
 
 RECEIPT_NAME = "verification.json"
 SCHEMA_VERSION = 1
-CIRCUIT_ID = "voltage-divider-dc-op-v1"
 
 
 def path_for(config_path):
@@ -87,7 +87,9 @@ def check(receipt, executable, tool_version=None):
         return False, "No representative analog simulation has been recorded."
     if receipt.get("tool") != "ngspice":
         return False, "The recorded simulation receipt belongs to another tool."
-    if receipt.get("status") != "verified" or receipt.get("circuit") != CIRCUIT_ID:
+    if receipt.get("circuit") != CIRCUIT_ID:
+        return False, "The recorded simulation receipt has an untrusted circuit identifier."
+    if receipt.get("status") != "verified":
         return False, "The recorded analog simulation did not verify this simulator."
     if not receipt.get("executable_sha256") or not receipt.get("tool_version"):
         return False, "The recorded simulation receipt is missing executable evidence."
@@ -99,9 +101,14 @@ def check(receipt, executable, tool_version=None):
         return False, "The recorded simulation receipt has non-numeric result evidence."
     if not all(math.isfinite(value) for value in (expected, observed, tolerance)) or tolerance < 0:
         return False, "The recorded simulation receipt has invalid result evidence."
+    # Use trusted built-in fixture constants instead of trusting values supplied by the receipt
+    if abs(expected - EXPECTED_VALUE) > TOLERANCE:
+        return False, "The recorded simulation receipt has an untrusted expected value."
+    if tolerance > TOLERANCE:
+        return False, "The recorded simulation receipt has an untrusted tolerance."
     if receipt.get("simulation_exit_code") != 0:
         return False, "The recorded simulation did not exit successfully."
-    if abs(observed - expected) > tolerance * max(1.0, abs(expected)):
+    if abs(observed - EXPECTED_VALUE) > TOLERANCE:
         return False, "The recorded simulation value was outside its stated tolerance."
     if not executable or not receipt.get("executable") or not _same_path(receipt["executable"], executable):
         return False, "The recorded simulation used a different simulator executable."
@@ -113,7 +120,7 @@ def check(receipt, executable, tool_version=None):
                        f"but the selected executable reports {tool_version}.")
     simulated_at = receipt.get("simulated_at") or "an earlier run"
     return True, (f"Representative analog simulation verified at {simulated_at} "
-                  f"(v(out) = {observed}, expected {expected}).")
+                  f"(v(out) = {observed}, expected {EXPECTED_VALUE}).")
 
 
 def stale_summary(receipt):

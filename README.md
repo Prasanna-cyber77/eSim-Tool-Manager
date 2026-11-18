@@ -10,7 +10,7 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+" /></a>
   <a href="https://github.com/Prasanna-cyber77/eSim-Tool-Manager"><img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Ubuntu-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Platform" /></a>
   <a href="https://ngspice.sourceforge.io/"><img src="https://img.shields.io/badge/Ngspice-47%20Verified-00F2FE?style=for-the-badge&logo=circuitverse&logoColor=black" alt="Ngspice 47" /></a>
-  <a href="docs/TESTING.md"><img src="https://img.shields.io/badge/Tests-101%20Passed%20%7C%201%20Skipped-22C55E?style=for-the-badge&logo=checkmarx&logoColor=white" alt="Tests" /></a>
+  <a href="docs/TESTING.md"><img src="https://img.shields.io/badge/Tests-103%20Passed%20%7C%201%20Skipped-22C55E?style=for-the-badge&logo=checkmarx&logoColor=white" alt="Tests" /></a>
   <a href="https://fossee.in/"><img src="https://img.shields.io/badge/FOSSEE-Winter%20Internship%202026-1E3A8A?style=for-the-badge" alt="FOSSEE 2026" /></a>
 </p>
 
@@ -23,7 +23,7 @@ The **eSim Automated Tool Manager** is a cross-platform command-line tool built 
 ## 💎 Core Concept
 
 * **The Problem:** Manually discovering, installing, and configuring third-party dependencies for eSim (such as KiCad, Ngspice, and HDL toolchains) is error-prone, platform-dependent, and frequently broken by path mismatches, missing libraries, or corrupted packages.
-* **The Solution:** A unified, lightweight Python CLI that automates eSim root discovery, dependency health checks, cryptographic package verification, process-scoped environment isolation, and runtime simulation validation.
+* **The Solution:** A unified, lightweight Python CLI that automates eSim root discovery, dependency health checks, archive checksum verification, process-scoped environment isolation, and standalone runtime simulation validation.
 
 ---
 
@@ -43,11 +43,12 @@ The **eSim Automated Tool Manager** is a cross-platform command-line tool built 
 ### 🛡️ Health & Verification
 * **Workflow Dependency Matrix:** Assesses prerequisites across 6 distinct eSim workflows (Netlisting, Analog Simulation, HDL Verifier, Icarus Co-simulation, NgVeri, and NGHDL).
 * **Real Simulation Verification:** Runs an isolated DC operating point voltage-divider test on Ngspice and verifies expected numeric outputs ($V_{\text{out}} = 1.0\,\text{V}$).
-* **Cryptographic Receipts:** Generates signed, tamper-resistant verification receipts bound to binary SHA-256 and simulation metrics.
+* **Verification Records:** Generates local checksum and simulation verification records bound to binary SHA-256, version, and numeric simulation metrics.
 
 ### ⚙️ Environment Management
 * **Process-Scoped Isolation:** Previews and applies simulator variables (`ESIM_NGSPICE`, `SPICE_LIB_DIR`, `PATH`) strictly to child processes.
 * **Zero Host Mutation:** Never modifies system registry, machine `PATH`, or global environment variables.
+* **Safe Diagnostic Serialization:** Diagnostic JSON output strictly redacts unrelated inherited host environment secrets.
 * **Shell Activation Snippets:** Emits copy-paste activation scripts for PowerShell, Command Prompt, and Bash.
 
 ---
@@ -72,7 +73,7 @@ flowchart TD
     subgraph InstallFlow ["📦 Installation Flow"]
         Preview["👁️ Preview Installation Plan\n<i>WinGet / APT / Portable Archive</i>"]:::action
         Approval{"User\nApproval?"}:::decision
-        VerifyDL["🔐 Verify Download Integrity\n<i>Cryptographic SHA-256 Verification</i>"]:::action
+        VerifyDL["🔐 Verify Download Integrity\n<i>SHA-256 Digest Verification</i>"]:::action
         InstallAction["🚀 Install or Report Failure\n<i>Unpack to Local State or Invoke Package Manager</i>"]:::action
         ReportFail["❌ Abort with Diagnostics\n<i>Record Native Code in operations.jsonl</i>"]:::warning
     end
@@ -117,18 +118,22 @@ flowchart TD
 
 | Technology | Role | Purpose in Project |
 | :--- | :--- | :--- |
-| **Python** | Runtime Engine | Core application logic (tested on Python 3.11+) |
+| **Python** | Runtime Engine | Core application logic (tested on Python 3.13.2; compatible with 3.11+) |
 | **argparse** | CLI Parser | Structured CLI subcommands, input arguments, and help flags |
-| **unittest** | Testing Framework | Comprehensive automated test suite with isolated mocking |
+| **unittest** | Testing Framework | Comprehensive automated test suite with isolated mocking (104 tests) |
 | **py7zr** | Compression | Safe extraction of upstream `.7z` portable Ngspice archives |
 | **WinGet** | Windows Packaging | Automated preview and machine-scope installation of system KiCad |
 | **APT** | Linux Packaging | Ubuntu/Debian package management, dpkg inspection, and updates |
 | **Ngspice** | Circuit Simulator | Official console simulator (v47) and voltage-divider runtime validation |
-| **JSON / JSONL** | Data & Logging | Machine-readable outputs (`--json`), settings, and tamper-resistant receipts |
+| **JSON / JSONL** | Data & Logging | Machine-readable outputs (`--json`), settings, and local verification records |
 
 ---
 
 ## 📦 Installation & Usage
+
+### Tested Environments
+* **Primary Host:** Windows 11 x64 with Python 3.13.2.
+* **Compatibility:** Python 3.11+ on Windows and Ubuntu Linux (64-bit architectures).
 
 ### Setup
 
@@ -137,34 +142,40 @@ flowchart TD
 git clone https://github.com/Prasanna-cyber77/eSim-Tool-Manager.git
 cd eSim-Tool-Manager
 
-# Create and activate virtual environment
+# Create virtual environment
 python -m venv .venv
 
-# Install dependencies
+# Install dependencies into the virtual environment
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-### Essential Commands
+### Essential Commands (PowerShell)
+
+Define `$python` to reference the virtual environment interpreter consistently:
 
 ```powershell
+$python = '.\.venv\Scripts\python.exe'
+
 # 1. Discover eSim root and list detected toolchain versions
-python -m esim_tool_manager list
+& $python -m esim_tool_manager list
 
 # 2. Check dependency health across 6 eSim workflows
-python -m esim_tool_manager doctor
+& $python -m esim_tool_manager doctor
 
 # 3. Verify Ngspice runtime with an isolated simulation test
-python -m esim_tool_manager verify ngspice
+& $python -m esim_tool_manager verify ngspice
 
-# 4. Perform complete end-to-end detection and simulation validation
-python -m esim_tool_manager validate
+# 4. Perform toolchain detection, checksum and simulation validation
+& $python -m esim_tool_manager validate
 
 # 5. Check for available package and portable updates
-python -m esim_tool_manager updates
+& $python -m esim_tool_manager updates
 
 # 6. Preview portable Ngspice installation (safe dry-run)
-python -m esim_tool_manager install ngspice --dry-run
+& $python -m esim_tool_manager install ngspice --dry-run
 ```
+
+*Note: For machine-readable output, place `--json` before the subcommand (e.g. `& $python -m esim_tool_manager --json list` or `& $python -m esim_tool_manager --json env`). All inherited host secrets and unrelated environment variables are strictly redacted from diagnostic serialization.*
 
 ---
 
@@ -172,8 +183,8 @@ python -m esim_tool_manager install ngspice --dry-run
 
 All automated tests and verification routines run against isolated temporary workspaces:
 
-* **102 tests executed**: **101 passed**, **1 skipped** by default.
-* **102 passed (100%)** when `ESIM_TOOL_MANAGER_REAL_TESTS=1` is set to run the live managed Ngspice integration test.
+* **104 tests executed**: **103 passed**, **1 skipped** by default.
+* **104 passed (100%)** when `ESIM_TOOL_MANAGER_REAL_TESTS=1` is set to run the live managed Ngspice integration test.
 * **Real Ngspice 47 verification passed**: Executes an isolated DC operating point simulation and validates the output voltage ($V_{\text{out}} = 1.0\,\text{V}$).
 * **Non-destructive demo passed**: `.\scripts\demo.ps1` runs all read-only checks, environment projections, and test suites with exit code 0.
 
@@ -190,7 +201,7 @@ To run the complete test suite:
 Detailed architectural notes, verification guides, and submission evidence:
 
 * [Architecture Report](docs/ARCHITECTURE_REPORT.md) — Technical review, design patterns, and engineering decisions
-* [Testing Guide & Evidence](docs/TESTING.md) — Automated test logs, receipts, and live validation output
+* [Testing Guide & Evidence](docs/TESTING.md) — Automated test logs, verification records, and live validation output
 * [Installation Guide](docs/INSTALLATION.md) — Step-by-step setup and platform prerequisites
 * [Compatibility Matrix](docs/COMPATIBILITY_MATRIX.md) — Detailed boundaries between verified and diagnostic workflows
 * [Final Readiness Report](docs/FINAL_READINESS_REPORT.md) — Screening task completion and verification status
@@ -201,9 +212,9 @@ Detailed architectural notes, verification guides, and submission evidence:
 
 ## ⚠️ Known Limitations & Boundaries
 
+* **Verified Standalone Ngspice Simulation**: The manager validates standalone console simulation runtimes (`ngspice_con.exe`). Co-simulation (`d_cosim`), NGHDL, NgVeri, and the full eSim GUI workflow remain unverified until executed within eSim itself.
+* **Unit-Tested Package Adapters**: WinGet and APT package workflows, dpkg version parsing, and plan generation are unit-tested with mock fixtures; live execution in an Ubuntu virtual machine is scheduled for subsequent validation rounds.
 * **KiCad WinGet Hash Mismatch**: Upstream WinGet manifests occasionally experience installer SHA-256 mismatches (`0x8A150011`). The manager safely detects and aborts rather than executing untrusted installers; use `diagnose kicad` to review error logs.
-* **Simulation Scope vs. Full GUI**: The manager validates standalone console simulation runtimes (`ngspice_con.exe`). Co-simulation (`d_cosim`), NGHDL, NgVeri, and the full eSim GUI workflow remain unverified until executed within eSim itself.
-* **Ubuntu Live Runtime**: Debian/Ubuntu package workflows and version checks are modeled and tested with mock fixtures; live execution in an Ubuntu virtual machine is scheduled for subsequent validation rounds.
 
 ---
 

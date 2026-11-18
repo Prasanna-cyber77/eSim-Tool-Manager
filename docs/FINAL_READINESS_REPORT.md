@@ -10,26 +10,26 @@ Reference checkout (read-only): `D:\VS Code\FOSSEE\eSim`
 
 ## Result
 
-The submission package is ready for local review. The default suite passes, the gated real integration test passes against the managed Ngspice 47 installation, all nine command families respond correctly on the development host, and the repository contains only source, tests, requirements, and documentation.
+The submission package is ready for review. The default suite passes (104 tests: 103 passed, 1 skipped), the gated real integration test passes against the managed Ngspice 47 installation (104/104 passed), all nine command families respond correctly on the development host, and the repository contains only source, tests, requirements, and documentation.
 
-No remote repository, push, pull request, email, or form submission has been created.
+The project remote repository has been configured and published to GitHub: `https://github.com/Prasanna-cyber77/eSim-Tool-Manager.git`.
 
 ## Measured evidence
 
 | Check | Command | Result |
 | --- | --- | --- |
-| Default suite | `& '.\.venv\Scripts\python.exe' -B -m unittest discover -s tests -v` | 102 run, 101 passed, 1 skipped, 0 failures |
-| Real integration | `ESIM_TOOL_MANAGER_REAL_TESTS=1` + `RealManagedNgspiceTests` | 1 run, 1 passed in 3.282s |
+| Default suite | `& '.\.venv\Scripts\python.exe' -B -m unittest discover -s tests -v` | 104 run, 103 passed, 1 skipped, 0 failures |
+| Real integration | `ESIM_TOOL_MANAGER_REAL_TESTS=1` + `RealManagedNgspiceTests` | 104 run, 104 passed |
 | Demo script | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\demo.ps1` | Exit 0; doctor exit 1 is informational |
 | Compilation | `python -m compileall -q esim_tool_manager tests scripts` | Exit 0 |
 | Runtime verification | `verify ngspice` | `v(out) = 1.0`, expected `1.0` |
-| End-to-end validation | `validate` | `Overall: PASS` |
+| Detection & validation | `validate` | `Overall: PASS` |
 | Managed receipt | `verify ngspice` | 811 file digests verified |
 | Ubuntu | Mocked tests only | Not executed on a real Ubuntu VM |
 
 The skipped default test is the real managed-Ngspice test; it is gated by `ESIM_TOOL_MANAGER_REAL_TESTS=1` and passed when run explicitly.
 
-Per-file test totals: 15 CLI/configuration, 16 discovery/health, 19 packages, 17 portable, and 35 runtime features.
+Per-file test totals: 15 CLI/configuration, 16 discovery/health, 19 packages, 17 portable, and 37 runtime features (total: 104 tests).
 
 ## Command coverage
 
@@ -55,16 +55,23 @@ The final smoke pass exercised:
 - Fixed `portable.is_link` to tolerate platforms without `stat.FILE_ATTRIBUTE_REPARSE_POINT`, protecting the Ubuntu path.
 - Bound verification receipts to the `tool` field in addition to path, digest, version, circuit, and expected value.
 - Added a regression test for link detection without Windows-only `stat` attributes.
-- Updated all stale test counts to the measured 102/101/1 result.
+- Updated all stale test counts to the measured 104/103/1 result.
 - Expanded `.gitignore` for virtual environments, installers, archives, caches, logs, generated receipts, local settings, and secret files.
+- Redacted inherited host secrets and environment variables from `env --json` diagnostic output in `cli.py`.
+- Hardened `verification.py` receipt validation to enforce trusted built-in fixture constants (`EXPECTED_VALUE`, `TOLERANCE`, `CIRCUIT_ID`) instead of trusting receipt-supplied values.
+- Replaced unsupported claims (such as "signed" or "tamper-resistant") with technically accurate terms ("local checksum and simulation verification records").
+- Added regression tests for secret sanitization and manipulated receipt parameters.
+- Added GitHub Actions continuous integration workflow (`.github/workflows/ci.yml`).
 
 ## Repository contents
 
-The local repository contains:
+The repository contains:
 
 - `README.md`
 - `requirements.txt`
 - `.gitignore` and `.gitattributes`
+- `.github/workflows/ci.yml`
+- `assets/` (hero vector banner)
 - `esim_tool_manager/` (13 modules)
 - `tests/` (5 test modules)
 - `scripts/demo.ps1`
@@ -81,43 +88,24 @@ Excluded from version control:
 
 ## Local Git state
 
-The repository was initialized on branch `main` with a clean initial commit containing the reviewed files. Run the following to confirm:
+The repository has been published to GitHub on branch `main` at:
+`https://github.com/Prasanna-cyber77/eSim-Tool-Manager.git`
+
+Current status can be checked with:
 
 ```powershell
 git status --short
-git log -1 --stat
+git log -2 --oneline
 git remote -v
 ```
-
-The expected remote output is empty. No local or remote configuration was changed beyond repository initialization.
 
 ## Outstanding blockers
 
 1. **KiCad transfer and hash failure.** WinGet downloaded short or mismatched KiCad installers for 9.0.3 and 10.0.8. The expected 10.0.8 SHA-256 is `5652b9ed52fca4aa63ec2ec61c8bfd4fab4f6a2fbfdb441def2972b0e9b2dfc7`; the recorded download did not match. Rejected installers were never executed. KiCad, netlisting, and the full `doctor` check remain unavailable.
 2. **eSim GUI not exercised.** No eSim Full GUI analog or `d_cosim` run was performed. The analog receipt proves the simulator binary and the manager's isolated workflow, not the GUI.
 3. **HDL flows not executed.** `d_cosim`, NGHDL, and NgVeri require matched Icarus, GHDL, MSYS2, and eSim components that are not present.
-4. **Ubuntu not executed.** APT behavior is covered by mocked tests on Windows; no Ubuntu 24.04/26.04 VM transaction exists.
+4. **Ubuntu live packages not executed.** APT behavior is covered by unit tests on Windows; no live Ubuntu 24.04/26.04 VM package transaction exists.
 5. **No disposable-VM repeat.** Managed Ngspice installation and simulation evidence comes from the development host.
-6. **No remote repository.** Publishing and reviewer access require explicit approval.
-
-## Exact publishing steps after approval
-
-Do not run these until the user approves publishing.
-
-1. Review the commit and ensure the working tree is clean:
-
-   ```powershell
-   git status
-   git log -1 --stat
-   ```
-
-2. Create a private GitHub repository and push the existing local branch. Replace the owner/name if requested:
-
-   ```powershell
-   gh repo create eSim-Tool-Manager --private --source . --remote origin --push
-   ```
-
-   Manual alternative:
 
    ```powershell
    git remote add origin https://github.com/<account>/eSim-Tool-Manager.git

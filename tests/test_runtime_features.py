@@ -300,6 +300,32 @@ class VerificationReceiptTests(unittest.TestCase):
         self.assertEqual(summary["circuit"], CIRCUIT_ID)
         self.assertNotIn("executable_sha256", summary)
 
+    def test_manipulated_receipt_values_are_rejected(self):
+        receipt = verification.build_receipt(result(self.binary), self.binary, "47")
+        # Manipulated expected value
+        manipulated_expected = dict(receipt, expected=2.0, observed=2.0)
+        verified, message = verification.check(manipulated_expected, self.binary, "47")
+        self.assertFalse(verified)
+        self.assertIn("untrusted expected value", message)
+
+        # Manipulated tolerance
+        manipulated_tolerance = dict(receipt, tolerance=10.0, observed=5.0)
+        verified, message = verification.check(manipulated_tolerance, self.binary, "47")
+        self.assertFalse(verified)
+        self.assertIn("untrusted tolerance", message)
+
+        # Manipulated circuit identifier
+        manipulated_circuit = dict(receipt, circuit="foreign-circuit")
+        verified, message = verification.check(manipulated_circuit, self.binary, "47")
+        self.assertFalse(verified)
+        self.assertIn("untrusted circuit identifier", message)
+
+        # Manipulated binary hash
+        manipulated_hash = dict(receipt, executable_sha256="0" * 64)
+        verified, message = verification.check(manipulated_hash, self.binary, "47")
+        self.assertFalse(verified)
+        self.assertIn("simulator executable changed", message)
+
 
 class SimulationTests(unittest.TestCase):
     def setUp(self):
@@ -472,6 +498,27 @@ class NewCommandTests(unittest.TestCase):
             applied = json.loads(output)["applied"]
             self.assertTrue(applied["verified"])
             self.assertEqual(applied["version"], "47")
+
+    def test_env_json_does_not_disclose_inherited_secrets(self):
+        fake_secret_path = r"C:\secret_token_in_path\bin"
+        with patch.dict(os.environ, {"SECRET_TOKEN_XYZ": "super_secret_value_12345",
+                                     "AWS_FAKE_KEY": "fake_aws_secret_key",
+                                     "PATH": fake_secret_path + os.pathsep + os.environ.get("PATH", "")}), \
+             patch.object(cli, "probe", return_value=Probe(version="47", banner="ngspice-47")):
+            code, output, _ = self.invoke("--json", "--esim-root", str(self.root), "env")
+        self.assertEqual(code, 0)
+        self.assertNotIn("super_secret_value_12345", output)
+        self.assertNotIn("fake_aws_secret_key", output)
+        self.assertNotIn("secret_token_in_path", output)
+        payload = json.loads(output)
+        env_dump = payload["prepared"]["environment"]
+        self.assertNotIn("SECRET_TOKEN_XYZ", env_dump)
+        self.assertNotIn("AWS_FAKE_KEY", env_dump)
+        self.assertIn("ESIM_NGSPICE", env_dump)
+        changes = payload["prepared"]["changes"]
+        path_changes = [c for c in changes if c["variable"] == "PATH"]
+        self.assertTrue(path_changes)
+        self.assertEqual(path_changes[0]["previous"], "(preserved)")
 
     def test_verify_records_success_and_failure_receipts(self):
         receipt_path = self.base / "local/eSimToolManager/verification.json"

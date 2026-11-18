@@ -1,6 +1,6 @@
 # Installation guide
 
-The CLI uses the existing Python 3.11+ environment. The portable backend uses `py7zr==1.1.4` to decode `.7z` into bounded memory buffers before constructing the intermediate tar. Install the project dependency inside `.venv`.
+The CLI operates on Python 3.11+ environments. Tested on Python 3.13.2 (Windows 11 x64) and designed for Python 3.11+ across Windows and Linux. The portable backend uses `py7zr==1.1.4` to decode `.7z` into bounded memory buffers before constructing the intermediate tar. Install the project dependency inside `.venv`.
 
 ## Preview from PowerShell
 

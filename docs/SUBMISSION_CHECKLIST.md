@@ -14,7 +14,7 @@
 
 ## Tests
 
-- [x] Default unit/integration/CLI/negative suite passes: **102 run, 101 passed, 1 skipped**.
+- [x] Default unit/integration/CLI/negative suite passes: **104 run, 103 passed, 1 skipped**.
 - [x] Real managed-Ngspice integration runs separately with `ESIM_TOOL_MANAGER_REAL_TESTS=1`: receipt verified and `v(out) = 1.0`.
 - [x] Root discovery, environment idempotence, spaces/apostrophes, corrupt receipts, stale receipts, simulation failures, and JSON guard paths covered.
 - [x] Windows subprocess argument and timeout behavior exercised with a real child process.
@@ -45,8 +45,8 @@
 
 - [ ] Approve a disposable-VM Ngspice installation and KiCad installation.
 - [ ] Approve an Ubuntu VM APT transaction.
-- [ ] Approve creation of the private GitHub repository and reviewer access.
-- [ ] Do not push, publish, email, or submit until explicitly approved.
+- [x] GitHub repository created and published: https://github.com/Prasanna-cyber77/eSim-Tool-Manager.git.
+- [ ] Do not push or publish follow-up commits until explicitly approved.
 
 ## Claim boundaries
 
